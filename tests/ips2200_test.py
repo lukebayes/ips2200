@@ -48,7 +48,6 @@ class TestIps2200(unittest.TestCase):
 
     def test_from_sbr_address_with_sys3(self):
         value = from_address(0xe3)
-        print_value('value:', value)
         self.assertEqual(value, 0x23)
 
     def test_from_nvm_address_with_sys3(self):

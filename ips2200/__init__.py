@@ -1,9 +1,11 @@
 
+
 def print_value(label, value):
     print('-------------------')
     print(label, 'dec: 0d' + str(value))
     print(label, 'hex: 0x' + format(value, 'x'))
     print(label, 'bin: 0b' + format(value, 'b'))
+
 
 def to_address(value, use_nvm):
     # Convert the documented address (e.g. 0x00 to the actual value that the
@@ -33,7 +35,8 @@ def to_address(value, use_nvm):
 
 def from_address(value):
     # Convert from a provided actual i2c memory address into the documented
-    # address by removing leading (unused) bits and separating the NVM/SBR flag.
+    # address by removing leading (unused) bits and separating the NVM/SBR
+    # flag.
     #
     # Memory addresses in the IPS2200 consume a number of bits to describe the
     # operation.
@@ -44,7 +47,6 @@ def from_address(value):
     if (value > 0b11111111):
         raise ValueError('Provided value must not be larger than a single ' +
                          'byte but was 0b' + format(value, 'b') + ' instead.')
-
     return value ^ 0b11000000
 
 
