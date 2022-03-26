@@ -21,7 +21,9 @@ ALL_FILES=`find . -name "*.py"`
 .PHONY: test test-w build lint clean
 
 test: 
-	$(PYTHON) -m unittest discover -s tests -p '*_test.py'
+	pytest $(TEST_FILES)
+
+	# $(PYTHON) -m unittest discover -s tests -p '*_test.py'
 
 test-w:
 	$(WHEN_CHG) $(ALL_FILES) -c "make test"
