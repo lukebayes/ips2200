@@ -16,12 +16,17 @@ PYTHON=`which python3`
 SRC_FILES=`find . -name "ips2200/*.py"`
 TEST_FILES=`find . -name "tests/*_test.py"`
 ALL_FILES=`find . -name "*.py"`
+PYCACHE_FILES=`find . -name "__pycache__"`
 
 
 .PHONY: test test-w build lint clean
 
+clean:
+	rm -rf $(PYCACHE_FILES)
+	
+
 test: 
-	pytest $(TEST_FILES)
+	pytest -s $(TEST_FILES)
 
 	# $(PYTHON) -m unittest discover -s tests -p '*_test.py'
 

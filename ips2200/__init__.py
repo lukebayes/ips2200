@@ -1,4 +1,6 @@
 
+DEFAULT_DEVICE_ADDRESS = 0x18
+
 
 def print_value(label, value):
     print('-------------------')
@@ -18,13 +20,12 @@ def to_address(value, use_nvm):
     # Bits 0-4: 5 bit base memory address value
     # Bit 5: HIGH indicates SRB/SFR address type, LOW indicates NVM memory
     # Bit 6 & 7: Always HIGH
-    if (value > 0b11111):
-        raise ValueError('Provided value must only use first 5 bits (< 31), ' +
-                         'but was 0b' + format(value, 'b') + ' instead. To ' +
-                         'select between NVM and SRB/SFR, pass use_nvm=Bool ' +
-                         'argument to this function.')
+    # if (value > 0x32):
+    #     raise ValueError('Provided value must only use first 5 bits (< 31), ' +
+    #                      'but was 0b' + format(value, 'b') + ' instead. To ' +
+    #                      'select between NVM and SRB/SFR, pass use_nvm=Bool ' +
+    #                      'argument to this function.')
 
-    print("use_nvm:", use_nvm, "value:", value, format(value, 'b'))
     if (use_nvm):
         # Bit 6 is low if using NVM
         return value | 0b11000000
@@ -50,8 +51,71 @@ def from_address(value):
     return value ^ 0b11000000
 
 
-class Ips2200():
-    # The IPS2200 class provides a semantic interface to the device i2c API.
+def to_memory(value):
+    # Left shift 5 bits onto the provided value and ensure bits 0-4 are 1
+    return (value << 5) ^ 0b11111
 
-    def __init__(self, bus=None):
+
+def from_memory(value):
+    # Right shift unused 5 bits from the right and return the value
+    return value >> 5
+
+
+def split_bytes(value):
+    # Separate the provided double byte integer into 2 independent bytes.
+    return [value & 0xff, value >> 8 & 0xff]
+
+
+def join_bytes(left, right):
+    # Join the provided single byte integers into a single double type value.
+    return ((0xff & left) << 8) ^ right
+
+
+class I2CBuilder():
+    def __init__(self, device_address, bus=None):
+        self._device_address = device_address
+        self._use_nvm = False
         self._bus = bus
+        self.operations = []
+
+    def _bus_read(self, bus, addr):
+        results = [0x00, 0x00]
+        addr = to_address(addr, self._use_nvm)
+        bus.write_readinto([self._device_address, addr], results)
+        return from_memory(join_bytes(results[1], results[0]))
+
+    def _bus_write(self, bus, addr, value):
+        addr = to_address(addr, self._use_nvm)
+        parts = split_bytes(to_memory(value))
+        bus.write(addr, parts)
+
+    def use_nvm(self):
+        # Turn on the NVM flag so that all address bits will have the NVM bit
+        # flipped
+        self._use_nvm = True
+        return self
+
+    def read_register(self, addr):
+        # Read a register on the next call to execute
+        self.operations.append(lambda bus: self._bus_read(bus, addr))
+
+    def write_register(self, addr, value):
+        # Write a register on the next call to execute
+        self.operations.append(lambda bus: self._bus_write(bus, addr, value))
+
+    def execute(self, bus=None):
+        # Execute any stored operations
+        if (bus is not None):
+            self._bus = bus
+        if (self._bus is None):
+            raise ValueError('Cannot execute without first providing a bus')
+        results = []
+        for operation in self.operations:
+            results.append(operation(self._bus))
+
+        self.operations = []
+        if (len(results) == 1):
+            return results[0]
+
+        return results
+
