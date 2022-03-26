@@ -1,8 +1,29 @@
 import re
 import unittest
-from ips2200 import Ips2200, to_address, from_address, print_value
+from ips2200 import *
 
 # print('value:', '0x' + format(value, 'x'))
+
+class FakeBus():
+    def __init__(self):
+        self._cache = {}
+
+    def write(self, dev_addr, mem_addr, value):
+        self._cache[mem_addr] = value
+
+
+    def read(self, dev_addr, mem_addr):
+        if (self._cache[mem_addr] is None):
+            raise Exception('Cannot read from unconfigured memory address')
+
+        return self._cache[mem_addr]
+
+class TestFakeBus(unittest.TestCase):
+
+    def test_callable(self):
+        fb = FakeBus()
+        self.assertIsNotNone(fb)
+
 
 class TestIps2200(unittest.TestCase):
 
@@ -53,6 +74,23 @@ class TestIps2200(unittest.TestCase):
     def test_from_nvm_address_with_sys3(self):
         value = from_address(0xc3)
         self.assertEqual(value, 0x03)
+
+    def test_builder_is_instantiable(self):
+        b = I2CBuilder()
+        self.assertIsNotNone(b)
+
+    def test_builder_use_nvm(self):
+        b = I2CBuilder().use_nvm()
+        self.assertIsNotNone(b)
+
+    def test_builder_set_register(self):
+        b = I2CBuilder().set_register(0x00, 10, 0b1)
+        operation = b.operations[0]
+        self.assertIsNotNone(operation)
+
+        fake_bus = FakeBus()
+        fake_bus.write(0x18, to_address(0x00, False), 0x323)
+        # value = operation(fake_bus)
 
 
 if __name__ == '__main__':

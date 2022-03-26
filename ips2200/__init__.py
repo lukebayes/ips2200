@@ -1,4 +1,6 @@
 
+DEFAULT_DEVICE_ADDRESS = 0x18
+
 
 def print_value(label, value):
     print('-------------------')
@@ -50,8 +52,64 @@ def from_address(value):
     return value ^ 0b11000000
 
 
+def to_memory(value):
+    pass
+
+
+def from_memory(value):
+    pass
+
+
+class I2CBuilder():
+    def __init__(self, device_addr=DEFAULT_DEVICE_ADDRESS):
+        self._use_nvm = False
+        self._cache = {}
+        self._device_addr = device_addr
+        self.operations = []
+
+    def use_nvm(self):
+        self._use_nvm = True
+        return self
+
+    def _bus_read(self, bus, addr):
+        return bus.read(to_address(addr, self._use_nvm))
+
+    def _bus_write(self, bus, addr, value):
+        return bus.write(to_address(addr, self._use_nvm), value)
+
+    def _get_value_at(self, bus, addr):
+        if (self._cache[addr] is None):
+            self._cache[addr] = self._bus_read(addr)
+
+        return self._cache[addr]
+
+    def _set_value_at(self, bus, addr, indices, bits):
+        value = self._get_value_at(bus, addr)
+
+    def set_register(self, addr, indices, bits):
+        self.operations.append(lambda bus: self._set_value_at(bus, addr,
+                                                              indices, bits))
+        return self
+
+
+class I2CBusWrapper():
+    def __init__(self, delegate, dev_addr, use_nvm):
+        self._dev_addr = dev_addr
+        self._delegate = delegate
+        self._use_nvm = use_nvm
+
+    def write(self, mem_addr, value):
+        addr = to_address(mem_addr, self._use_nvm)
+        return delegate.write(self._dev_addr, addr, value)
+
+    def read(self, mem_addr):
+        addr = to_address(mem_addr, self._use_nvm)
+        return delegate.read(self._dev_addr, addr)
+
+
 class Ips2200():
     # The IPS2200 class provides a semantic interface to the device i2c API.
 
-    def __init__(self, bus=None):
+    def __init__(self, use_nvm=False, bus=None):
         self._bus = bus
+        self.use_nvm = use_nvm
