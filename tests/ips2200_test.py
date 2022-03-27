@@ -1,5 +1,5 @@
 import unittest
-from ips2200 import I2CBuilder, print_value, to_address, from_address, to_memory, from_memory, split_bytes, join_bytes
+from ips2200 import I2CBuilder, print_value, to_address, from_address, to_memory, from_memory, split_bytes, join_bytes, Constants
 import tests.fakes.busio as busio
 
 
@@ -249,13 +249,71 @@ class TestIps2200Builder(unittest.TestCase):
         self.assertEqual(values[4], 0x0000)
 
     def test_write_0x00(self):
+        # Write a register directly
         b = self.builder
         b.write_register(0x00, 0x0327)
-        b.execute()
-
         b.read_register(0x00)
         value = b.execute()
         self.assertEqual(value, 0x0327)
+
+    def test_output_mode_sin_cos_ref(self):
+        b = self.builder
+        b.use_srb()
+        b.set_output_mode(Constants.OutputModeSinCosRef)
+        b.read_register(0x00)
+        value = b.execute()
+        self.assertEqual(value, 0x0327)
+
+    def test_output_mode_quad(self):
+        b = self.builder
+        b.use_srb()
+        b.set_output_mode(Constants.OutputModeQuadABN)
+        b.read_register(0x00)
+        value = b.execute()
+        self.assertEqual(value, 0x032b)
+
+    def test_output_mode_sin_cos_nn(self):
+        b = self.builder
+        b.use_srb()
+        b.set_output_mode(Constants.OutputModeSinCosNN)
+        b.read_register(0x00)
+        value = b.execute()
+        self.assertEqual(value, 0x0323)
+
+    def test_set_spi(self):
+        b = self.builder
+        b.set_spi_data_order(Constants.SpiDataOrderLsb)
+        b.read_register(Constants.RegAddrSystemConfig1)
+        value = b.execute()
+        self.assertEqual(value, 0x723)
+
+    def test_set_spi_mode(self):
+        b = self.builder
+        b.set_spi_mode(Constants.SpiModePolarityRisingFalling)
+        b.read_register(Constants.RegAddrSystemConfig1)
+        value = b.execute()
+        self.assertEqual(value, 0x123)
+
+    def test_set_address(self):
+        b = self.builder
+        b.set_i2c_address(0x12)
+        b.read_register(Constants.RegAddrSystemConfig1)
+        value = b.execute()
+        self.assertEqual(value, 0x203)
+
+    def test_set_system_protocol(self):
+        b = self.builder
+        b.set_system_protocol(0x11)
+        b.read_register(Constants.RegAddrSystemConfig1)
+        value = b.execute()
+        self.assertEqual(value, 0x332)
+
+    def test_set_quad_mode_xor(self):
+        b = self.builder
+        b.set_quad_mode_xor(Constants.QuadModeDoublePulse)
+        b.read_register(Constants.RegAddrSystemConfig2)
+        value = b.execute()
+        self.assertEqual(value, 0x501)
 
 
 if __name__ == '__main__':
