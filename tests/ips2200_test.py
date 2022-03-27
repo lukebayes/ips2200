@@ -289,24 +289,24 @@ class TestIps2200Builder(unittest.TestCase):
 
     def test_set_spi_mode(self):
         b = self.builder
-        b.set_spi_mode(Constants.SpiModePolarityRisingFalling)
+        b.set_spi_mode(Constants.SpiModePolarityFallingRising)
         b.read_register(Constants.RegAddrSystemConfig1)
         value = b.execute()
-        self.assertEqual(value, 0x123)
+        self.assertEqual(value, 0b1100100011)
 
     def test_set_address(self):
         b = self.builder
-        b.set_i2c_address(0x12)
+        b.set_i2c_address(0xb)
         b.read_register(Constants.RegAddrSystemConfig1)
         value = b.execute()
-        self.assertEqual(value, 0x203)
+        self.assertEqual(value, 0b1110110011)
 
     def test_set_system_protocol(self):
         b = self.builder
-        b.set_system_protocol(0x11)
+        b.set_system_protocol(Constants.SystemProtocolI2CInterrupt)
         b.read_register(Constants.RegAddrSystemConfig1)
         value = b.execute()
-        self.assertEqual(value, 0x332)
+        self.assertEqual(value, 0b1100100010)
 
     def test_set_quad_mode_xor(self):
         b = self.builder
@@ -314,6 +314,62 @@ class TestIps2200Builder(unittest.TestCase):
         b.read_register(Constants.RegAddrSystemConfig2)
         value = b.execute()
         self.assertEqual(value, 0x501)
+
+    def test_set_output_interrupt(self):
+        b = self.builder
+        b.set_output_interrupt_enable(Constants.OutputInterruptEnableOn)
+        b.read_register(Constants.RegAddrSystemConfig2)
+        value = b.execute()
+        self.assertEqual(value, 0x181)
+
+    def test_set_cyber_security(self):
+        b = self.builder
+        b.set_cyber_security(Constants.CyberSecurityRO)
+        b.read_register(Constants.RegAddrSystemConfig2)
+        value = b.execute()
+        self.assertEqual(value, 0x141)
+
+    def test_set_quad_mode(self):
+        b = self.builder
+        b.set_quad_mode(Constants.QuadModeABNLow)
+        b.read_register(Constants.RegAddrSystemConfig2)
+        value = b.execute()
+        self.assertEqual(value, 0x101)
+
+    def test_set_quad_mode(self):
+        b = self.builder
+        b.set_quad_mode(Constants.QuadModeABHigh)
+        b.read_register(Constants.RegAddrSystemConfig2)
+        value = b.execute()
+        self.assertEqual(value, 0b100100001)
+
+    def test_set_tx_charge_pump(self):
+        b = self.builder
+        b.set_tx_charge_pump_enable(Constants.On)
+        b.read_register(Constants.RegAddrSystemConfig2)
+        value = b.execute()
+        self.assertEqual(value, 0b100010001)
+
+    def test_set_tx_amplitude_control(self):
+        b = self.builder
+        b.set_tx_amplitude_control(Constants.On)
+        b.read_register(Constants.RegAddrSystemConfig2)
+        value = b.execute()
+        self.assertEqual(value, 0b100001001)
+
+    def test_set_protocol_integrity_check(self):
+        b = self.builder
+        b.set_protocol_integrity_check(Constants.On)
+        b.read_register(Constants.RegAddrSystemConfig2)
+        value = b.execute()
+        self.assertEqual(value, 0b100000101)
+
+    def test_set_supply_voltage(self):
+        b = self.builder
+        b.set_supply_voltage(Constants.Off)
+        b.read_register(Constants.RegAddrSystemConfig2)
+        value = b.execute()
+        self.assertEqual(value, 0b100000000)
 
 
 if __name__ == '__main__':

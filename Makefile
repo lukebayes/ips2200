@@ -25,9 +25,9 @@ clean:
 	rm -rf $(PYCACHE_FILES)
 	
 
-test: 
+test: Makefile
 	pytest -s $(TEST_FILES)
-
+	# pytest -k set_address -s $(TEST_FILES)
 	# $(PYTHON) -m unittest discover -s tests -p '*_test.py'
 
 test-w:

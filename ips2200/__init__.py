@@ -19,33 +19,61 @@ class Constants():
     RegAddrIRQNWatchdog1 = 0x0d
     RegAddrIRQNWatchdog2 = 0x0e
 
-    SpiDataOrder = (RegAddrSystemConfig1, 10, 10)
+    # Parameters and tuples for IPS2200 configuration settings.
+    #
+    # The configuration tuples are prefixed with an underscore to indicate that
+    # these are internal-only values. External clients should use the provided
+    # interface methods and can optionally use the feature-specific constants
+    # to configure values.
+
+    # Shared single bit flip values
+    On = 0b1
+    Off = 0b0
+
+    _SpiDataOrder = (RegAddrSystemConfig1, 10, 10)
     SpiDataOrderMsb = 0b0
     SpiDataOrderLsb = 0b1
 
-    SpiMode = (RegAddrSystemConfig1, 8, 9)
+    _SpiMode = (RegAddrSystemConfig1, 8, 9)
     SpiModePhaseRisingFalling = 0b00
     SpiModePhaseFallingRising = 0b01
     SpiModePolarityRisingFalling = 0b10
     SpiModePolarityFallingRising = 0b11
 
-    I2CAddress = (RegAddrSystemConfig1, 4, 7)
+    _I2CAddress = (RegAddrSystemConfig1, 4, 7)
 
-    OutputMode = (RegAddrSystemConfig1, 2, 3)
+    _OutputMode = (RegAddrSystemConfig1, 2, 3)
     OutputModeSinCosNN = 0b00
     OutputModeSinCosRef = 0b01
     OutputModeQuadABN = 0b10
     OutputModeQuadAB = 0b11
 
-    SystemProtocol = (RegAddrSystemConfig1, 0, 1)
+    _SystemProtocol = (RegAddrSystemConfig1, 0, 1)
     SystemProtocolSpi = 0b00
     SystemProtocolSpiInterrupt = 0b01
     SystemProtocolI2CInterrupt = 0b10
     SystemProtocolI2CInterruptAddress = 0b11
 
-    QuadModeXor = (RegAddrSystemConfig2, 10, 10)
+    _QuadModeXor = (RegAddrSystemConfig2, 10, 10)
     QuadModeOnePulse = 0b0
     QuadModeDoublePulse = 0b1
+
+    _OutputInterruptEnable = (RegAddrSystemConfig2, 7, 7)
+    OutputInterruptEnableOff = 0b0
+    OutputInterruptEnableOn = 0b1
+
+    _CyberSecurity = (RegAddrSystemConfig2, 6, 6)
+    CyberSecurityRW = 0b0
+    CyberSecurityRO = 0b1
+
+    _QuadMode = (RegAddrSystemConfig2, 5, 5)
+    QuadModeABNLow = 0b0
+    QuadModeABHigh = 0b1
+
+    _TXChargePumpEnable = (RegAddrSystemConfig2, 4, 4)
+    _TXAmplitudeCtrl = (RegAddrSystemConfig2, 3, 3)
+    _ProtocolIntegrityCheck = (RegAddrSystemConfig2, 2, 2)
+    _SupplyVoltage = (RegAddrSystemConfig2, 0, 0)
 
 
 def print_value(label, value):
@@ -116,6 +144,15 @@ def join_bytes(left, right):
     return ((0xff & left) << 8) ^ right
 
 
+def set_bit(data, value, index):
+    mask = 1 << index
+    data &= ~mask
+    if value:
+        data |= mask
+
+    return data
+
+
 class I2CBuilder():
     def __init__(self, device_address, bus=None):
         self._device_address = device_address
@@ -136,8 +173,20 @@ class I2CBuilder():
 
     def _write_bits_at(self, bus, addr, bits, start, end):
         value = self._bus_read(bus, addr)
-        bits = bits << start
-        value = value ^ bits
+        count = (end - start) + 1
+        i = 0
+        while i < end + 1:
+            if (i < start):
+                i += 1
+                continue
+
+            # Get the value of the rightmost bit
+            bit = bits & 0b1
+            value = set_bit(value, bit, i)
+            # Digest the used bit by pushing it off
+            bits = bits >> 1
+            i += 1
+
         self._bus_write(bus, addr, value)
 
     def _append_op(self, config, value):
@@ -172,27 +221,55 @@ class I2CBuilder():
         return self
 
     def set_output_mode(self, mode):
-        self._append_op(Constants.OutputMode, mode)
+        self._append_op(Constants._OutputMode, mode)
         return self
 
     def set_spi_data_order(self, order):
-        self._append_op(Constants.SpiDataOrder, order)
+        self._append_op(Constants._SpiDataOrder, order)
         return self
 
     def set_spi_mode(self, mode):
-        self._append_op(Constants.SpiMode, mode)
+        self._append_op(Constants._SpiMode, mode)
         return self
 
     def set_i2c_address(self, addr):
-        self._append_op(Constants.I2CAddress, addr)
+        self._append_op(Constants._I2CAddress, addr)
         return self
 
     def set_system_protocol(self, protocol):
-        self._append_op(Constants.SystemProtocol, protocol)
+        self._append_op(Constants._SystemProtocol, protocol)
         return self
 
     def set_quad_mode_xor(self, value):
-        self._append_op(Constants.QuadModeXor, value)
+        self._append_op(Constants._QuadModeXor, value)
+        return self
+
+    def set_output_interrupt_enable(self, value):
+        self._append_op(Constants._OutputInterruptEnable, value)
+        return self
+
+    def set_cyber_security(self, value):
+        self._append_op(Constants._CyberSecurity, value)
+        return self
+
+    def set_quad_mode(self, value):
+        self._append_op(Constants._QuadMode, value)
+        return self
+
+    def set_tx_charge_pump_enable(self, value):
+        self._append_op(Constants._TXChargePumpEnable, value)
+        return self
+
+    def set_tx_amplitude_control(self, value):
+        self._append_op(Constants._TXAmplitudeCtrl, value)
+        return self
+
+    def set_protocol_integrity_check(self, value):
+        self._append_op(Constants._ProtocolIntegrityCheck, value)
+        return self
+
+    def set_supply_voltage(self, value):
+        self._append_op(Constants._SupplyVoltage, value)
         return self
 
     def execute(self, bus=None):
