@@ -257,6 +257,17 @@ class TestIps2200Builder(unittest.TestCase):
         value = b.execute()
         self.assertEqual(value, 0x0327)
 
+    def test_output_mode(self):
+        b = self.builder
+        b.use_srb()
+        b.set_output_mode(0b01)
+        b.execute()
+
+        b.read_register(0x20)
+        value = b.execute()
+        print_value('RESULT:', value)
+        self.assertEqual(value, 0x0327)
+
 
 if __name__ == '__main__':
     unittest.main()

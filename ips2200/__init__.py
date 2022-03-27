@@ -89,6 +89,22 @@ class I2CBuilder():
         parts = split_bytes(to_memory(value))
         bus.write(addr, parts)
 
+    def _write_bits_at(self, bus, addr, bits, start, end):
+        print('addr: 0x' + format(addr, 'x'))
+        value = self._bus_read(bus, addr)
+        print_value('existing:', value)
+        print('bits: 0b' + format(bits, 'b'))
+        bits = bits << start
+        print('bits: 0b' + format(bits, 'b'))
+        value = value ^ bits
+        print_value('AFTER:', value)
+        # print('mem_addr: 0x' + format(mem_addr, 'x'))
+        bus.write(addr, value)
+
+    def use_srb(self):
+        # Turn off NVM flag
+        self._use_nvm = False
+
     def use_nvm(self):
         # Turn on the NVM flag so that all address bits will have the NVM bit
         # flipped
@@ -102,6 +118,9 @@ class I2CBuilder():
     def write_register(self, addr, value):
         # Write a register on the next call to execute
         self.operations.append(lambda bus: self._bus_write(bus, addr, value))
+
+    def set_output_mode(self, mode):
+        self.operations.append(lambda bus: self._write_bits_at(bus, 0x00, mode, 2, 3))
 
     def execute(self, bus=None):
         # Execute any stored operations
