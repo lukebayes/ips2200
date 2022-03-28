@@ -32,6 +32,7 @@ class Constants():
     High = 0b1
     Low = 0b0
 
+    # Key and positions with valid values for 
     _SpiDataOrder = (RegAddrSystemConfig1, 10, 10)
     SpiDataOrderMsb = 0b0
     SpiDataOrderLsb = 0b1
@@ -142,6 +143,10 @@ def join_bytes(left, right):
     return ((0xff & left) << 8) ^ right
 
 
+def to_cache_key(addr):
+  # Transform a numeric address into a string cache key
+  return '0x' + format(addr, 'x')
+
 def set_bit(data, value, index):
     mask = 1 << index
     data &= ~mask
@@ -156,17 +161,39 @@ class I2CBuilder():
         self._device_address = device_address
         self._use_nvm = False
         self._bus = bus
+        self._cache = {}
         self.operations = []
 
+    def _update_cache(self, addr, value):
+        key = to_cache_key(addr)
+        self._cache.update({key: value})
+
+    def _delete_cache(self, addr):
+        key = to_cache_key(addr)
+        self._cache.pop(key, None)
+
+    def _get_cached(self, addr):
+        key = to_cache_key(addr)
+        if (key not in self._cache):
+          return None
+        return self._cache.get(key)
+
     def _bus_read(self, bus, addr):
-        results = [0x00, 0x00]
         addr = to_address(addr, self._use_nvm)
+        cached = self._get_cached(addr)
+        if (cached != None):
+          return cached
+
+        results = [0x00, 0x00]
         bus.write_readinto([self._device_address, addr], results)
-        return from_memory(join_bytes(results[1], results[0]))
+        response = from_memory(join_bytes(results[1], results[0]))
+        self._update_cache(addr, response)
+        return response
 
     def _bus_write(self, bus, addr, value):
         addr = to_address(addr, self._use_nvm)
         parts = split_bytes(to_memory(value))
+        self._delete_cache(addr)
         bus.write(addr, parts)
 
     def _write_bits_at(self, bus, addr, bits, start, end):
