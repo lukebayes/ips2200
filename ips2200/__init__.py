@@ -29,6 +29,8 @@ class Constants():
     # Shared single bit flip values
     On = 0b1
     Off = 0b0
+    High = 0b1
+    Low = 0b0
 
     _SpiDataOrder = (RegAddrSystemConfig1, 10, 10)
     SpiDataOrderMsb = 0b0
@@ -59,16 +61,12 @@ class Constants():
     QuadModeDoublePulse = 0b1
 
     _OutputInterruptEnable = (RegAddrSystemConfig2, 7, 7)
-    OutputInterruptEnableOff = 0b0
-    OutputInterruptEnableOn = 0b1
 
     _CyberSecurity = (RegAddrSystemConfig2, 6, 6)
     CyberSecurityRW = 0b0
     CyberSecurityRO = 0b1
 
     _QuadMode = (RegAddrSystemConfig2, 5, 5)
-    QuadModeABNLow = 0b0
-    QuadModeABHigh = 0b1
 
     _TXChargePumpEnable = (RegAddrSystemConfig2, 4, 4)
     _TXAmplitudeCtrl = (RegAddrSystemConfig2, 3, 3)

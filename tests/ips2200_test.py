@@ -317,7 +317,7 @@ class TestIps2200Builder(unittest.TestCase):
 
     def test_set_output_interrupt(self):
         b = self.builder
-        b.set_output_interrupt_enable(Constants.OutputInterruptEnableOn)
+        b.set_output_interrupt_enable(Constants.On)
         b.read_register(Constants.RegAddrSystemConfig2)
         value = b.execute()
         self.assertEqual(value, 0x181)
@@ -331,14 +331,14 @@ class TestIps2200Builder(unittest.TestCase):
 
     def test_set_quad_mode(self):
         b = self.builder
-        b.set_quad_mode(Constants.QuadModeABNLow)
+        b.set_quad_mode(Constants.Low)
         b.read_register(Constants.RegAddrSystemConfig2)
         value = b.execute()
         self.assertEqual(value, 0x101)
 
     def test_set_quad_mode(self):
         b = self.builder
-        b.set_quad_mode(Constants.QuadModeABHigh)
+        b.set_quad_mode(Constants.High)
         b.read_register(Constants.RegAddrSystemConfig2)
         value = b.execute()
         self.assertEqual(value, 0b100100001)
